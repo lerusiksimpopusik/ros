@@ -4,7 +4,7 @@
   <name>text_to_cmd_vel_pkg</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
-  <maintainer email="vizdeneva@gmail.com">vlada</maintainer>
+  <maintainer email="chernodolja@gmail.com">root</maintainer>
   <license>TODO: License declaration</license>
 
   <depend>rclpy</depend>
