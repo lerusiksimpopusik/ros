@@ -1,0 +1,276 @@
+<?xml version="1.0"?>
+<robot name="robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <xacro:property name="body_width" value="0.18"/>
+    <xacro:property name="body_length" value="0.25"/>
+    <xacro:property name="body_height" value="0.03"/>
+
+    <xacro:property name="head_radius" value="0.06"/>
+    <xacro:property name="ear_size" value="0.03"/>
+
+    <xacro:property name="leg_radius" value="0.02"/>
+    <xacro:property name="leg_length" value="0.10"/>
+
+    <xacro:property name="wheel_radius" value="0.02"/>
+
+    <xacro:property name="mass_body" value="1.0"/>
+    <xacro:property name="mass_leg" value="0.2"/>
+    <xacro:property name="mass_head" value="0.4"/>
+    <xacro:property name="mass_ear" value="0.05"/>
+    <xacro:property name="mass_wheel" value="0.1"/>
+
+    <material name="Brown">
+        <color rgba="0.7 0.4 0.2 1"/>
+    </material>
+
+    <material name="Black">
+        <color rgba="0.0 0.0 0.0 1"/>
+    </material>
+
+    <!-- BASE LINK -->
+    <link name="base_footprint"/>
+    <link name="base_link"/>
+
+    <joint name="base_joint" type="fixed">
+        <parent link="base_footprint"/>
+        <child link="base_link"/>
+        <origin xyz="0 0 0.02" rpy="0 0 0"/> 
+    </joint>
+
+    <!-- BODY -->
+
+    <link name="body">
+        <visual>
+            <origin xyz="0 0 0.1"/>
+            <geometry>
+                <box size="${body_length} ${body_width} ${body_height}"/>
+            </geometry>
+            <material name="Brown"/>
+        </visual>
+
+        <collision>
+            <origin xyz="0 0 ${body_height/2}"/>
+            <geometry>
+                <box size="${body_length} ${body_width} ${body_height}"/>
+            </geometry>
+        </collision>
+
+        <inertial>
+            <origin xyz="0 0 ${body_height/2}"/>
+            <mass value="${mass_body}"/>
+            <inertia
+                ixx="${mass_body * (body_width*body_width + body_height*body_height) / 12}"
+                iyy="${mass_body * (body_length*body_length + body_height*body_height) / 12}"
+                izz="${mass_body * (body_length*body_length + body_width*body_width) / 12}"
+                ixy="0" ixz="0" iyz="0"/>
+        </inertial>
+    </link>
+
+    <joint name="body_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="body"/>
+    </joint>
+
+
+    <!-- HEAD -->
+
+    <link name="head">
+        <visual>
+            <origin xyz="0 0 0"/>
+            <geometry>
+                <sphere radius="${head_radius}"/>
+            </geometry>
+            <material name="Brown"/>
+        </visual>
+
+        <collision>
+            <geometry>
+                <sphere radius="${head_radius}"/>
+            </geometry>
+        </collision>
+
+        <inertial>
+            <mass value="${mass_head}"/>
+            <origin xyz="0 0 0"/>
+            <inertia ixx="0.005" iyy="0.005" izz="0.005" ixy="0" ixz="0" iyz="0"/>
+        </inertial>
+    </link>
+
+    <joint name="head_joint" type="fixed">
+        <parent link="body"/>
+        <child link="head"/>
+        <origin xyz="${body_length/2} 0 ${0.1}"/>
+    </joint>
+
+
+    <!-- EARS -->
+
+    <xacro:macro name="ear" params="prefix side">
+        <link name="${prefix}">
+            <visual>
+                <geometry>
+                    <box size="${ear_size} ${ear_size} ${ear_size}"/>
+                </geometry>
+                <material name="Brown"/>
+            </visual>
+
+            <collision>
+                <geometry>
+                    <box size="${ear_size} ${ear_size} ${ear_size}"/>
+                </geometry>
+            </collision>
+
+            <inertial>
+                <mass value="${mass_ear}"/>
+                <origin xyz="0 0 0"/>
+                <inertia ixx="0.0001" iyy="0.0001" izz="0.0001" ixy="0" ixz="0" iyz="0"/>
+            </inertial>
+        </link>
+
+        <joint name="${prefix}_joint" type="fixed">
+            <parent link="head"/>
+            <child link="${prefix}"/>
+            <origin xyz="0 ${side*head_radius*0.55} ${head_radius*0.75}"/>
+        </joint>
+    </xacro:macro>
+
+    <xacro:ear prefix="left_ear" side="1"/>
+    <xacro:ear prefix="right_ear" side="-1"/>
+
+
+    <!-- LEGS -->
+
+    <xacro:macro name="leg" params="name x y">
+        <link name="${name}">
+            <visual>
+                <geometry>
+                    <cylinder radius="${leg_radius}" length="${leg_length}"/>
+                </geometry>
+                <material name="Brown"/>
+            </visual>
+
+            <collision>
+                <geometry>
+                    <cylinder radius="${leg_radius}" length="${leg_length}"/>
+                </geometry>
+            </collision>
+
+            <inertial>
+                <mass value="${mass_leg}"/>
+                <origin xyz="0 0 0"/>
+                <inertia ixx="0.001" iyy="0.001" izz="0.001" ixy="0" ixz="0" iyz="0"/>
+            </inertial>
+        </link>
+
+        <joint name="${name}_joint" type="fixed">
+            <parent link="body"/>
+            <child link="${name}"/>
+            <origin xyz="${x} ${y} ${leg_length/2}"/>
+        </joint>
+    </xacro:macro>
+
+    <xacro:leg name="front_left_leg"  x="${ body_length/2 - 0.03 }" y="0.07"/>
+    <xacro:leg name="front_right_leg" x="${ body_length/2 - 0.03 }" y="-0.07"/>
+
+    <xacro:leg name="rear_left_leg"   x="${ -body_length/2 + 0.03 }" y="0.07"/>
+    <xacro:leg name="rear_right_leg"  x="${ -body_length/2 + 0.03 }" y="-0.07"/>
+
+
+    <!-- WHEELS -->
+
+    <xacro:macro name="wheel" params="name parent side_sign">
+        <link name="${name}">
+            <visual>
+                <geometry>
+                    <cylinder radius="${wheel_radius}" length="0.05"/>
+                </geometry>
+                <material name="Black"/>
+            </visual>
+
+            <collision>
+                <geometry>
+                    <sphere radius="${wheel_radius}"/>
+                </geometry>
+            </collision>
+
+            <inertial>
+                <mass value="${mass_wheel}"/>
+                <origin xyz="0 0 0"/>
+                <inertia ixx="0.0005" iyy="0.0005" izz="0.0005" ixy="0" ixz="0" iyz="0"/>
+            </inertial>
+        </link>
+
+        <joint name="${name}_joint" type="continuous">
+            <parent link="${parent}"/>
+            <child link="${name}"/>
+            <origin xyz="0 0 -0.05" rpy="${pi/2} 0 0"/> 
+            <axis xyz="0 0 ${side_sign}"/>
+        </joint>
+
+        <!-- <gazebo reference="${name}">
+            <mu1>1.0</mu1>
+            <mu2>1.0</mu2>
+            <kp>1000000.0</kp>
+            <kd>1.0</kd>
+            <fdir1>1 0 0</fdir1> 
+        </gazebo> -->
+    </xacro:macro>
+
+    <xacro:wheel name="front_left_wheel"   parent="front_left_leg"   side_sign="1"/>
+    <xacro:wheel name="front_right_wheel"  parent="front_right_leg"  side_sign="-1"/>
+    <xacro:wheel name="rear_left_wheel"    parent="rear_left_leg"    side_sign="1"/>
+    <xacro:wheel name="rear_right_wheel"   parent="rear_right_leg"   side_sign="-1"/>
+
+  <!-- TAIL -->
+  <xacro:property name="tail_radius" value="0.01"/>
+  <xacro:property name="tail_length" value="0.12"/>
+  <xacro:property name="mass_tail" value="0.05"/>
+
+  <link name="tail">
+      <visual>
+          <geometry>
+              <cylinder radius="${tail_radius}" length="${tail_length}"/>
+          </geometry>
+          <material name="Brown"/>
+          <origin xyz="0 0 ${tail_length/2}" rpy="0 0 0"/>
+      </visual>
+
+      <collision>
+          <geometry>
+              <cylinder radius="${tail_radius}" length="${tail_length}"/>
+          </geometry>
+          <origin xyz="0 0 ${tail_length/2}" rpy="0 0 0"/>
+      </collision>
+
+      <inertial>
+          <mass value="${mass_tail}"/>
+          <origin xyz="0 0 ${tail_length/2}" rpy="0 0 0"/>
+          <inertia ixx="0.00001" iyy="0.00001" izz="0.00001" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+  </link>
+
+  <joint name="tail_joint" type="continuous">
+      <parent link="body"/>
+      <child link="tail"/>
+      <origin xyz="${-body_length/2} 0 ${body_height/2}" rpy="0 0 0"/>
+      <axis xyz="0 0 1"/>
+  </joint>
+
+    <!-- GAZEBO PLUGINS -->
+    <gazebo>
+        <plugin filename="gz-sim-joint-state-publisher-system"
+                name="gz::sim::systems::JointStatePublisher">
+        </plugin>
+
+        <plugin filename="gz-sim-diff-drive-system"
+                name="gz::sim::systems::DiffDrive">
+            <left_joint>rear_left_wheel_joint</left_joint>
+            <right_joint>rear_right_wheel_joint</right_joint>
+            <child_frame_id>robot/base_footprint</child_frame_id>
+            <odom_frame>robot/odom</odom_frame>
+            <wheel_separation>0.14</wheel_separation>
+            <wheel_radius>${wheel_radius}</wheel_radius>
+            <odom_publish_frequency>10</odom_publish_frequency>
+        </plugin>
+    </gazebo>
+
+</robot>
